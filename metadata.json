@@ -1,0 +1,6 @@
+{
+  "name": "Polish Vocabulary & Grammar Tutor",
+  "description": "An interactive tutor that teaches vocabulary and grammar of the Polish language for English speakers, featuring structured lessons, dynamic exercises, progress-tracking metrics, and AI-powered grammar checking.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

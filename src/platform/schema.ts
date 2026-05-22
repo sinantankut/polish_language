@@ -5,6 +5,8 @@ export type CefrLevel = z.infer<typeof cefrLevelSchema>;
 
 export const roleSchema = z.enum(['learner', 'admin']);
 export type Role = z.infer<typeof roleSchema>;
+export const appRoleSchema = roleSchema;
+export type AppRole = Role;
 
 export const invitationStatusSchema = z.enum(['pending', 'accepted', 'revoked']);
 export type InvitationStatus = z.infer<typeof invitationStatusSchema>;
@@ -19,6 +21,8 @@ export const polishCaseSchema = z.enum([
   'vocative',
 ]);
 export type PolishCase = z.infer<typeof polishCaseSchema>;
+export const caseIdSchema = polishCaseSchema;
+export type CaseId = PolishCase;
 
 export const profileSchema = z.object({
   id: z.string().uuid(),

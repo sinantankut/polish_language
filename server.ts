@@ -3,6 +3,8 @@ import path from "path";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
+import { createInvitationHandler } from "./src/server/handlers/adminInvites";
+import { healthHandler } from "./src/server/handlers/health";
 
 dotenv.config();
 
@@ -35,11 +37,21 @@ function getGeminiClient() {
 
 // Ensure server can run even without immediate API key by catching errors gracefully in handlers
 app.get("/api/health", (req, res) => {
-  res.json({
-    status: "ok",
+  const response = healthHandler({
     hasApiKey: !!process.env.GEMINI_API_KEY,
-    time: new Date().toISOString()
   });
+
+  res.status(response.status).json(response.body);
+});
+
+app.post("/api/admin/invites", async (req, res) => {
+  const response = await createInvitationHandler({
+    method: req.method,
+    headers: req.headers,
+    body: req.body,
+  });
+
+  res.status(response.status).json(response.body);
 });
 
 // Endpoint 1: Complete AI Sentence Checking

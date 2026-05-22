@@ -57,6 +57,7 @@ export function AuthProvider({children}: {children: ReactNode}) {
 
   useEffect(() => {
     let cancelled = false;
+    let subscription: {unsubscribe: () => void} | null = null;
 
     async function syncSession(nextSession: Session | null) {
       setSession(nextSession);
@@ -85,33 +86,48 @@ export function AuthProvider({children}: {children: ReactNode}) {
       }
     }
 
-    supabase.auth
-      .getSession()
-      .then(({data}) => syncSession(data.session))
-      .catch((sessionError) => {
-        if (!cancelled) {
-          setError(
-            sessionError instanceof Error
-              ? sessionError.message
-              : 'Could not load session',
-          );
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setLoading(false);
-        }
+    try {
+      const authClient = supabase.auth;
+
+      authClient
+        .getSession()
+        .then(({data}) => syncSession(data.session))
+        .catch((sessionError) => {
+          if (!cancelled) {
+            setError(
+              sessionError instanceof Error
+                ? sessionError.message
+                : 'Could not load session',
+            );
+          }
+        })
+        .finally(() => {
+          if (!cancelled) {
+            setLoading(false);
+          }
+        });
+
+      const {
+        data: {subscription: authSubscription},
+      } = authClient.onAuthStateChange((_event, nextSession) => {
+        void syncSession(nextSession);
       });
 
-    const {
-      data: {subscription},
-    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      void syncSession(nextSession);
-    });
+      subscription = authSubscription;
+    } catch (sessionError) {
+      if (!cancelled) {
+        setError(
+          sessionError instanceof Error
+            ? sessionError.message
+            : 'Could not load session',
+        );
+        setLoading(false);
+      }
+    }
 
     return () => {
       cancelled = true;
-      subscription.unsubscribe();
+      subscription?.unsubscribe();
     };
   }, []);
 

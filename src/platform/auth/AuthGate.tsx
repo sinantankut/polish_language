@@ -6,7 +6,7 @@ import {useAuth} from './AuthProvider';
 export function AuthGate({children}: {children: ReactNode}) {
   const auth = useAuth();
   const [email, setEmail] = useState('');
-  const [sent, setSent] = useState(false);
+  const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -30,13 +30,12 @@ export function AuthGate({children}: {children: ReactNode}) {
     setFormError(null);
 
     try {
-      await auth.signInWithEmail(email);
-      setSent(true);
+      await auth.signInWithPassword(email, password);
     } catch (error) {
       setFormError(
         error instanceof Error
           ? error.message
-          : 'Could not send the sign-in link.',
+          : 'Could not sign in.',
       );
     } finally {
       setSubmitting(false);
@@ -81,7 +80,7 @@ export function AuthGate({children}: {children: ReactNode}) {
               Private sign-in
             </h2>
             <p className="mt-2 text-sm leading-6 text-stone-600">
-              Enter an invited email address to receive a sign-in link.
+              Enter your invited account credentials.
             </p>
           </div>
 
@@ -99,20 +98,29 @@ export function AuthGate({children}: {children: ReactNode}) {
             </div>
           </label>
 
+          <label className="block space-y-2 text-sm font-medium text-stone-800">
+            <span>Password</span>
+            <div className="flex items-center gap-2 rounded-md border border-stone-300 bg-white px-3 py-2 focus-within:border-red-700">
+              <LockKeyhole className="h-4 w-4 text-stone-500" />
+              <input
+                type="password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                className="min-w-0 flex-1 bg-transparent text-base outline-none"
+                required
+              />
+            </div>
+          </label>
+
           <button
             type="submit"
             disabled={submitting}
             className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-red-700 px-4 py-3 font-semibold text-white transition hover:bg-red-800 disabled:cursor-not-allowed disabled:bg-stone-400"
           >
             {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            Send sign-in link
+            Sign in
           </button>
 
-          {sent ? (
-            <p className="text-sm font-medium text-emerald-700">
-              Check your email for the private sign-in link.
-            </p>
-          ) : null}
           {formError || auth.error ? (
             <p className="text-sm font-medium text-red-700">
               {formError ?? auth.error}

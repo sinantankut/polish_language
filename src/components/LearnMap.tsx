@@ -1,4 +1,4 @@
-import {useState} from 'react';
+import {useRef, useState} from 'react';
 import {CheckCircle2, Clock3, LockKeyhole} from 'lucide-react';
 import {curriculumLevels, curriculumUnits} from '../data/curriculumSeed';
 import type {CurriculumUnit} from '../data/curriculumSeed';
@@ -120,9 +120,17 @@ export function LearnMap() {
     curriculumUnits.find((unit) => unit.status === 'available') ??
     curriculumUnits[0];
   const [selectedUnitId, setSelectedUnitId] = useState(firstAvailableUnit.id);
+  const lessonWorkspaceRef = useRef<HTMLDivElement>(null);
   const selectedUnit =
     curriculumUnits.find((unit) => unit.id === selectedUnitId) ??
     firstAvailableUnit;
+  const openLesson = (unitId: string) => {
+    setSelectedUnitId(unitId);
+    lessonWorkspaceRef.current?.scrollIntoView?.({
+      behavior: 'smooth',
+      block: 'start',
+    });
+  };
 
   return (
     <section className="space-y-5">
@@ -133,7 +141,9 @@ export function LearnMap() {
         </p>
       </div>
 
-      <LessonWorkspace unit={selectedUnit} />
+      <div ref={lessonWorkspaceRef}>
+        <LessonWorkspace unit={selectedUnit} />
+      </div>
 
       <div className="grid gap-4">
         {curriculumLevels.map((level) => {
@@ -206,7 +216,7 @@ export function LearnMap() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => setSelectedUnitId(unit.id)}
+                      onClick={() => openLesson(unit.id)}
                       className="mt-4 inline-flex items-center justify-center rounded-md border border-stone-300 px-3 py-2 text-sm font-semibold text-stone-700 transition hover:border-red-700 hover:text-red-700"
                     >
                       Open lesson {unit.lesson}: {unit.title}

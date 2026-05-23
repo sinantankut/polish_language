@@ -1,5 +1,5 @@
 import {fireEvent, render, screen, within} from '@testing-library/react';
-import {describe, expect, it} from 'vitest';
+import {describe, expect, it, vi} from 'vitest';
 import {LearnMap} from './LearnMap';
 
 describe('LearnMap', () => {
@@ -39,5 +39,26 @@ describe('LearnMap', () => {
         'Give help or advice to three people using dative recipients.',
       ),
     ).toBeInTheDocument();
+  });
+
+  it('brings the lesson workspace back into view when opening a lesson', () => {
+    const scrollIntoView = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+      configurable: true,
+      value: scrollIntoView,
+    });
+
+    render(<LearnMap />);
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Open lesson Lekcja 13: Życie to nie bajka / Komu bije dzwon?',
+      }),
+    );
+
+    expect(scrollIntoView).toHaveBeenCalledWith({
+      behavior: 'smooth',
+      block: 'start',
+    });
   });
 });

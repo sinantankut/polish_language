@@ -7,6 +7,9 @@ import {profileSchema} from '../schema';
 import type {AuthState} from './authTypes';
 
 const AuthContext = createContext<AuthState | null>(null);
+const DEVELOPMENT_ADMIN_EMAIL = 'admin@example.com';
+const DEVELOPMENT_ADMIN_PASSWORD = 'password';
+const DEVELOPMENT_ADMIN_USER_ID = '11111111-1111-4111-8111-111111111111';
 
 type ProfileRow = {
   id: string;
@@ -29,6 +32,39 @@ function mapProfile(row: ProfileRow): Profile {
     createdAt: row.created_at ?? now,
     updatedAt: row.updated_at ?? now,
   });
+}
+
+export function isDevelopmentAdminCredential(email: string, password: string) {
+  return (
+    import.meta.env.DEV &&
+    email.trim().toLowerCase() === DEVELOPMENT_ADMIN_EMAIL &&
+    password === DEVELOPMENT_ADMIN_PASSWORD
+  );
+}
+
+function createDevelopmentAdminSession() {
+  const now = new Date().toISOString();
+  const user = {
+    id: DEVELOPMENT_ADMIN_USER_ID,
+    email: DEVELOPMENT_ADMIN_EMAIL,
+  } as User;
+  const session = {
+    access_token: 'development-admin-token',
+    refresh_token: 'development-admin-refresh-token',
+    expires_in: 60 * 60,
+    token_type: 'bearer',
+    user,
+  } as Session;
+  const profile = profileSchema.parse({
+    id: user.id,
+    email: user.email,
+    role: 'admin',
+    cefrLevel: 'B1',
+    createdAt: now,
+    updatedAt: now,
+  });
+
+  return {profile, session};
 }
 
 async function loadProfile(user: User | null) {
@@ -150,6 +186,46 @@ export function AuthProvider({children}: {children: ReactNode}) {
         if (signInError) {
           setError(signInError.message);
           throw signInError;
+        }
+      },
+      signInWithPassword: async (email: string, password: string) => {
+        setError(null);
+
+        if (isDevelopmentAdminCredential(email, password)) {
+          const devAdmin = createDevelopmentAdminSession();
+
+          setSession(devAdmin.session);
+          setProfile(devAdmin.profile);
+          return;
+        }
+
+        const normalizedEmail = email.trim().toLowerCase();
+        const {data, error: signInError} = await supabase.auth.signInWithPassword({
+          email: normalizedEmail,
+          password,
+        });
+
+        if (signInError) {
+          setError(signInError.message);
+          throw signInError;
+        }
+
+        setSession(data.session);
+
+        if (data.user) {
+          try {
+            const nextProfile = await loadProfile(data.user);
+
+            setProfile(nextProfile);
+          } catch (profileError) {
+            const message =
+              profileError instanceof Error
+                ? profileError.message
+                : 'Could not load profile';
+
+            setError(message);
+            throw profileError;
+          }
         }
       },
       signOut: async () => {
